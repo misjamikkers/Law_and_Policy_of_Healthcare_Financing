@@ -1,0 +1,469 @@
+---
+title: "Introduction data analysis"
+author: "Misja Mikkers"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+
+# Packages
+
+```{r, message=FALSE, warning=FALSE}
+
+library(tidyverse)
+library(ggrepel)
+library(directlabels)
+
+```
+
+# Introduction
+
+We have downloaded the data on July 6, 2018 from the [OECD Database](https://stats.oecd.org/index.aspx?DataSetCode=HEALTH_STAT#).
+
+
+# Cost
+
+## Data
+
+
+```{r}
+cost <- read.csv2("../Data/hospital_cost.csv", stringsAsFactors = FALSE, sep = ",")
+cost$Value <- as.numeric(cost$Value)
+```
+
+Since not many countries provide all information we will only use "Curative and rehabilitative care" for General Hospitals. Prices in are constant PPP's. For the graph we will select the necessary Variables and Countries. South Africa, UK and Colombia did not provide information to the OECD.
+
+```{r}
+cost1 <- cost %>%
+  filter(Function == "Curative and rehabilitative care") %>%
+  select(Country, Year, Value) %>%
+    filter(Country == "Austria" | Country == "Belgium" | Country == "Czech Republic" | Country == "Colombia" | Country == "Denmark" | Country == "France" | Country == "Germany" | Country == "Ireland" | Country == "Netherlands" | Country == "Norway" | Country == "Spain" | Country == "United Kingdom" | Country == "South Africa") %>%
+  group_by(Country) %>%
+  mutate(label = if_else(Year == max(Year), as.character(Country), NA_character_))
+```
+
+## Graph
+
+```{r}
+ggplot(cost1, aes(Year, Value, group = Country, color = Country)) + geom_line() + theme_classic() + ylab("Hospital cost per capita") +
+  geom_line() +
+   geom_label_repel(aes(label = label),
+                  nudge_x = 1,
+                  na.rm = TRUE) + theme(legend.position = "none")
+
+ggsave("../Output/hospitalcost.png")
+```
+
+# Hospital Beds
+
+## Data
+
+```{r}
+beds <- read.csv2("../Data/hospital_beds.csv", stringsAsFactors = FALSE, sep = ",")
+beds$Value <- as.numeric(beds$Value)
+```
+
+
+```{r}
+beds1 <- beds %>%
+  filter(Measure == "Per 1 000 population") %>%
+  select(Country, Year, Value) %>%
+  filter(Country == "Austria" | Country == "Belgium" | Country == "Czech Republic" | Country == "Colombia" | Country == "Denmark" | Country == "France" | Country == "Germany" | Country == "Ireland" | Country == "Netherlands" | Country == "Norway" | Country == "Spain" | Country == "United Kingdom" | Country == "South Africa") %>%
+  group_by(Country) %>%
+  mutate(label = if_else(Year == max(Year), as.character(Country), NA_character_))
+```
+
+## Graph
+
+```{r}
+ggplot(beds1, aes(Year, Value, color = Country)) + geom_line() + theme_classic() + ylab("Number of beds per 1000 population") +
+   geom_label_repel(aes(label = label),
+                  nudge_x = 1,
+                  na.rm = TRUE) + theme(legend.position = "none")
+```
+
+# Number of hospitals
+
+```{r}
+hosp <- read.csv2("../Data/hospitals.csv", stringsAsFactors = FALSE, sep = ",")
+hosp$Value <- as.numeric(hosp$Value)
+```
+
+```{r}
+hosp1 <- hosp %>%
+  filter(Measure == "Per million population") %>%
+  select(Country, Year, Value) %>%
+  filter(Country == "Austria" | Country == "Belgium" | Country == "Czech Republic" | Country == "Colombia" | Country == "Denmark" | Country == "France" | Country == "Germany" | Country == "Ireland" | Country == "Netherlands" | Country == "Norway" | Country == "Spain" | Country == "United Kingdom" | Country == "South Africa") %>%
+  group_by(Country) %>%
+  mutate(label = if_else(Year == max(Year), as.character(Country), NA_character_))
+```
+
+```{r}
+ggplot(hosp1, aes(Year, Value, color = Country)) + geom_line() + theme_classic() + ylab("Number of hospitals per million population") +
+   geom_label_repel(aes(label = label),
+                  nudge_x = 1,
+                  na.rm = TRUE) + theme(legend.position = "none")
+```
+
+## Mortality
+
+```{r}
+ami <- read.csv2("../Data/AMI.csv", stringsAsFactors = FALSE, sep = ",")
+ami$Value.1 <- as.numeric(ami$Value.1)
+```
+
+
+```{r}
+ami1 <- ami %>%
+  filter(GEN == "T") %>%
+  filter(Indicator == "Thirty-day mortality after admission to hospital for AMI based on unlinked data") %>%
+  select(Country, Periods, Value, Value.1) %>%
+  filter(Country == "Austria" | Country == "Belgium" | Country == "Czech Republic" | Country == "Colombia" | Country == "Denmark" | Country == "France" | Country == "Germany" | Country == "Ireland" | Country == "Netherlands" | Country == "Norway" | Country == "Spain" | Country == "United Kingdom" | Country == "South Africa")
+```
+
+
+
+```{r}
+ami2 <- ami1 %>%
+  spread(Value, Value.1) %>%
+  group_by(Country) %>%
+  mutate(label = if_else(Periods == max(Periods), as.character(Country), NA_character_))
+```
+
+```{r}
+ggplot(ami2, aes(Periods, `Age-sex standardised rate per 100 patients`, color = Country)) + geom_line() + theme_classic() + ylab("Thirty-day mortality after admission to hospital for AMI") +
+   geom_label_repel(aes(label = label),
+                  nudge_x = 1,
+                  na.rm = TRUE) + theme(legend.position = "none")
+
+ggsave("../Output/mort.png")
+```
+
+## Breast cancer survival
+
+```{r}
+bc <- read.csv2("../Data/BC.csv", stringsAsFactors = FALSE, sep = ",")
+bc$Value.1 <- as.numeric(bc$Value.1)
+```
+
+```{r}
+bc1 <- bc %>%
+    filter(Indicator == "Breast cancer five year net survival ") %>%
+  select(Country, Periods, Value, Value.1) %>%
+  filter(Country == "Austria" | Country == "Belgium" | Country == "Czech Republic" | Country == "Colombia" | Country == "Denmark" | Country == "France" | Country == "Germany" | Country == "Ireland" | Country == "Netherlands" | Country == "Norway" | Country == "Spain" | Country == "United Kingdom" | Country == "South Africa")
+```
+
+
+```{r}
+bc2 <- bc1 %>%
+  spread(Value, Value.1) %>%
+  group_by(Country) %>%
+  mutate(label = if_else(Periods == max(Periods), as.character(Country), NA_character_))
+```
+
+```{r}
+ggplot(data = bc2, aes(x = Periods, y = `Age-standardised survival (%)`, group = Country, color = Country)) + geom_line() +
+   geom_label_repel(aes(label = label),
+                  nudge_x = 1,
+                  na.rm = TRUE) + theme(legend.position = "none")
+```
+
+This graph is not very good readable, therefore we will produce a bar chart:
+
+
+```{r}
+ggplot(data = bc2, aes(x = reorder(Country, `Age-standardised survival (%)`), y = `Age-standardised survival (%)`, fill = Periods )) + geom_bar(stat = "identity", position = "dodge") + theme_classic() + coord_flip() + xlab("") + ylab("Breast cancer five year net survival")
+```
+
+
+## Length of stay
+
+
+```{r}
+los <- read.csv2("../Data/lengthofstay.csv", stringsAsFactors = FALSE, sep = ",")
+los$Value <- as.numeric(los$Value)
+```
+
+We will only select all causes, the necessary variables and the countries we need.
+
+```{r}
+los1 <- los %>%
+  filter(Variable == "All causes") %>%
+  select(Country, Year, Value) %>%
+  filter(Country == "Austria" | Country == "Belgium" | Country == "Czech Republic" | Country == "Colombia" | Country == "Denmark" | Country == "France" | Country == "Germany" | Country == "Ireland" | Country == "Netherlands" | Country == "Norway" | Country == "Spain" | Country == "United Kingdom" | Country == "South Africa") %>%
+  mutate(label = if_else(Year == max(Year), as.character(Country), NA_character_))
+```
+
+
+```{r}
+ggplot(los1, aes(Year, Value, color = Country)) + geom_line() + theme_classic() + ylab("Length of stay, all causes") +
+   geom_label_repel(aes(label = label),
+                  nudge_x = 1,
+                  na.rm = TRUE) + theme(legend.position = "none")
+```
+
+# Technology
+
+```{r}
+tech <- read.csv2("../Data/technology.csv", stringsAsFactors = FALSE, sep = ",")
+tech$Value <- as.numeric(tech$Value)
+```
+
+
+Wwe first need to transform the dataset: we will make separate variables for all technology indicators. Then we will select the variables
+
+```{r}
+tech1 <- tech %>%
+  filter(Measure == "Per million population") %>%
+  select(Country, Year, Variable, Value) %>%
+  spread(Variable, Value) %>%
+  select(Country, Year, `Computed Tomography scanners, total`, `Magnetic Resonance Imaging units, total`, `Positron Emission Tomography (PET) scanners, total`) %>%
+    filter(Country == "Austria" | Country == "Belgium" | Country == "Czech Republic" | Country == "Colombia" | Country == "Denmark" | Country == "France" | Country == "Germany" | Country == "Ireland" | Country == "Netherlands" | Country == "Norway" | Country == "Spain" | Country == "United Kingdom" | Country == "South Africa")
+```
+
+To make the plots with labels we need to make seperate files for the different indicators:
+
+```{r}
+PET <- tech1 %>%
+  select(Country, Year, `Positron Emission Tomography (PET) scanners, total`) %>%
+  filter(`Positron Emission Tomography (PET) scanners, total` != "NA") %>%
+  group_by(Country) %>%
+  mutate(label = if_else(Year == max(Year), as.character(Country), NA_character_))
+```
+
+
+
+```{r}
+MRI <- tech1 %>%
+  select(Country, Year, `Magnetic Resonance Imaging units, total`) %>%
+  filter(`Magnetic Resonance Imaging units, total` != "NA") %>%
+  group_by(Country) %>%
+  mutate(label = if_else(Year == max(Year), as.character(Country), NA_character_))
+```
+
+
+```{r}
+CT <- tech1 %>%
+  select(Country, Year, `Computed Tomography scanners, total`) %>%
+  filter(`Computed Tomography scanners, total` != "NA") %>%
+  group_by(Country) %>%
+  mutate(label = if_else(Year == max(Year), as.character(Country), NA_character_))
+```
+
+
+```{r}
+ggplot(PET, aes(Year, `Positron Emission Tomography (PET) scanners, total`, color = Country)) + geom_line() + theme_classic() + ylab("Positron Emission Tomography (PET) scanners, total") +
+   geom_label_repel(aes(label = label),
+                  nudge_x = 1,
+                  na.rm = TRUE) + theme(legend.position = "none")
+```
+
+
+```{r}
+ggplot(MRI, aes(Year, `Magnetic Resonance Imaging units, total`, color = Country)) + geom_line() + theme_classic() + ylab("Magnetic Resonance Imaging units") +
+   geom_label_repel(aes(label = label),
+                  nudge_x = 1,
+                  na.rm = TRUE) + theme(legend.position = "none")
+```
+
+
+
+```{r}
+ggplot(CT, aes(Year, `Computed Tomography scanners, total`, color = Country)) + geom_line() + theme_classic() + ylab("Computed Tomography scanners, total") +
+   geom_label_repel(aes(label = label),
+                  nudge_x = 1,
+                  na.rm = TRUE) + theme(legend.position = "none")
+```
+
+
+# Combinations
+
+
+
+
+## Cost beds
+
+We will merge the cost files and bed files  to make a scatterplot.
+
+
+```{r}
+cost_beds <- left_join(cost1, beds1, by = "Country")
+
+cost_beds1 <- cost_beds %>%
+  filter(Year.x == Year.y)
+```
+
+
+
+```{r}
+ggplot(cost_beds1, aes(x = Value.x, y = Value.y, color = Country, label = Year.x)) + geom_point() + geom_text_repel(size = 3) + theme_classic() + xlab("hosptial cost per capita") + ylab("hospital beds per 1000 population")
+```
+
+
+
+## Cost hospitals
+
+
+We will merge the cost files and hostpital files  to make a scatterplot.
+
+
+```{r}
+cost_hosp <- left_join(cost1, hosp1, by = "Country")
+
+cost_hosp1 <- cost_hosp %>%
+  filter(Year.x == Year.y)
+```
+
+
+
+```{r}
+ggplot(cost_hosp1, aes(x = Value.x, y = Value.y, color = Country, label = Year.x)) + geom_point() + geom_text_repel(size = 3) + theme_classic() + xlab("hosptial cost per capita") + ylab("hospitals  per million population")
+```
+
+
+# Size of hospitals
+
+We will first filter the number of beds
+
+```{r}
+bedsno <- beds %>%
+  filter(Measure == "Number") %>%
+  select(Country, Year, Value) %>%
+  filter(Country == "Austria" | Country == "Belgium" | Country == "Czech Republic" | Country == "Colombia" | Country == "Denmark" | Country == "France" | Country == "Germany" | Country == "Ireland" | Country == "Netherlands" | Country == "Norway" | Country == "Spain" | Country == "United Kingdom" | Country == "South Africa")
+```
+
+
+And the number of hospitals
+```{r}
+hospno <- hosp %>%
+  filter(Measure == "Number") %>%
+  select(Country, Year, Value) %>%
+  filter(Country == "Austria" | Country == "Belgium" | Country == "Czech Republic" | Country == "Colombia" | Country == "Denmark" | Country == "France" | Country == "Germany" | Country == "Ireland" | Country == "Netherlands" | Country == "Norway" | Country == "Spain" | Country == "United Kingdom" | Country == "South Africa")
+```
+
+We will merge the files and calculate the number of beds per hospital. We will add a label for the last year. We will eliminate Norway, because data for Norway are only available for 2000.
+
+```{r}
+size_hosp <- left_join(hospno, bedsno, by = "Country")
+
+size_hosp1 <- size_hosp %>%
+  filter(Year.x == Year.y) %>%
+  filter(Country != "Norway") %>%
+  mutate(size = Value.y / Value.x) %>%
+  group_by(Country) %>%
+  mutate(label = if_else(Year.x == max(Year.x), as.character(Country), NA_character_))
+```
+
+And plot the development:
+
+```{r}
+ggplot(data = size_hosp1, aes(x = Year.x, y = size, color = Country)) + geom_line() + xlab("Year") + ylab("Number of beds per hospital") + theme_classic() +
+   geom_label_repel(aes(label = label),
+                  nudge_x = 1,
+                  na.rm = TRUE) + theme(legend.position = "none")
+
+ggsave("../Output/hospitalsize.png")
+```
+
+## Cost and mortality
+
+
+We will merge the cost files and mortality files  to make a scatterplot.
+
+
+```{r}
+cost_mort <- left_join(cost1, ami2, by = "Country")
+
+cost_mort1 <- cost_mort %>%
+  filter(Year == Periods)
+```
+
+```{r}
+ggplot(cost_mort1, aes(x = Value, y = `Age-sex standardised rate per 100 patients`, color = Country, label = Year)) + geom_point() + geom_text_repel(size = 3) + theme_classic() + xlab("hosptial cost per capita") + ylab("Thirty-day mortality after admission to hospital for AMI")
+```
+
+The graph above is not very good readable, therefore we will select the last year available.
+
+```{r}
+cost_mort2 <- cost_mort1 %>%
+  filter(label.y != "NA")
+```
+
+```{r}
+ggplot(data = cost_mort2, aes(x = Value,  y = `Age-sex standardised rate per 100 patients`, label = Country)) + geom_point() + geom_text_repel() + theme_classic() + xlab("Hospital cost per capita") + ylab("Thirty-day mortality after admission to hospital for AMI")
+```
+
+
+There is not a very strong correlation.
+
+
+## Breast cancer survival
+
+We will merge the data frames, we will add a year to the bc2 dataframe:
+
+```{r}
+bc2 <- bc2 %>%
+  mutate(Year = ifelse(Periods == "2000-2004", 2002, ifelse(Periods == "2005-2009", 2007, 2012)))
+```
+
+
+```{r}
+cost_bc <- left_join(bc2, cost1, by = c("Country", "Year")) %>%
+  filter(Value != "NA")
+```
+
+
+```{r, message = F}
+ggplot(cost_bc, aes(x = Value, y = `Age-standardised survival (%)`, color = Country, label = Year)) + geom_line() + geom_text_repel(size = 3) + theme_classic() + xlab("Hospital cost per capita") + ylab("Breast cancer five year net survival")
+```
+
+
+## Hospital size and hospitals per million population
+
+We will first merge the data frames
+
+```{r}
+hosp_conf <- left_join(hosp1, size_hosp1, by = "Country") %>%
+  filter(Year == Year.y)
+```
+
+```{r}
+ggplot(hosp_conf, aes(x = Value, y = size, color = Country, label = Year)) + geom_point() + geom_text_repel(size = 3) + theme_classic() + xlab("Number of hospitals per million population") + ylab("Beds per hospital")
+```
+
+This graph is not very readable, therefore we will take the last year available:
+
+```{r}
+hosp_conf1 <- hosp_conf %>%
+  filter(label.y != "NA")
+hosp_conf1$Year <- as.factor(hosp_conf1$Year)
+```
+
+
+```{r}
+ggplot(data = hosp_conf1, aes(Value, y = size, label = Country, color = Year)) + geom_point() + geom_text_repel() + xlab("Number of hospitals per million population") + ylab("Beds per hospital") + theme_classic()
+
+ggsave("../Output/hospital_beds.png")
+```
+
+## Cost  Technology (CT)
+
+We have chosen for CT-scanners as a proxy for technology, because this indicator has the least missing data.
+
+```{r}
+cost_MRI <- left_join(MRI, cost1, by = c("Country", "Year")) %>%
+  select(- label.y) %>%
+  filter(Value != "NA")
+```
+
+```{r}
+ggplot(cost_MRI, aes(x = Value, y = `Magnetic Resonance Imaging units, total`, color = Country, label = Year)) + geom_line() + geom_text_repel(size = 3) + theme_classic() + xlab("hospital cost per capita") + ylab("MRI per million population")
+
+ggsave("../Output/cost_tech.png")
+```
+
+
+
+
